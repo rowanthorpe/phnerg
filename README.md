@@ -28,10 +28,10 @@ Quick Start
     * Copy `camera-mirror` to the same directory as `phnerg`
 * edit both files to modify the `## EDIT THESE` variables to your liking
 * run phnerg with any of the following args if you need them:
-    * dual: record dual-screen instead of just primary
-    * mono: record single audio channel instead of stereo
-    * nocamera: don't launch a camera-mirror
-    * noscale: don't scale the image down, use native resolution (generally
+    * `dual`: record dual-screen instead of just primary
+    * `mono`: record single audio channel instead of stereo
+    * `nocamera`: don't launch a camera-mirror
+    * `noscale`: don't scale the image down, use native resolution (generally
       this will create enormous files)
 
 License
