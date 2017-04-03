@@ -28,6 +28,8 @@ vidsize='3200x1800'
 audchan='2'
 withcamera='1'
 scaleflags='-filter:v scale=1360:-1'
+fps=25
+hwaccel='vaapi'
 ## UP TO HERE
 
 set -e
@@ -44,7 +46,7 @@ while test ${#} -ne 0; do
 done
 
 screencast_command='ffmpeg \
-    -video_size ${vidsize} -framerate 25 -f x11grab -hwaccel vaapi -i :0.0 \
+    -video_size ${vidsize} -framerate ${fps} -f x11grab ${hwaccel:+-hwaccel ${hwaccel}} -i :0.0 \
     -f pulse -ar 48000 -ac ${audchan} -i default ${scaleflags} \
     -c:a flac -c:v dirac -q:v 0 -strict -1 \
     ~/Desktop/screencast-$(date +%Y%m%d%H%M%S).mkv
