@@ -1,7 +1,8 @@
 #!/bin/sh
 
 # phnerg:
-#   Record desktop to matroska file with dirac and flac lossless codecs
+#   Record desktop to matroska file with dirac & flac lossless codecs, &
+#   optional camera-mirror
 #
 # Copyright © 2017 Rowan Thorpe <rowan@rowanthorpe.com>
 #
