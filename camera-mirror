@@ -1,0 +1,146 @@
+#!/usr/bin/python3
+
+# camera-mirror:
+#   Runs an interface-less, undecorated, always-on-top, draggable "camera
+#   mirror" window in the corner of the primary monitor.
+#
+# Copyright © 2017 Rowan Thorpe <rowan@rowanthorpe.com>
+#
+# Some parts of the code started life copied from
+#   http://stackoverflow.com/a/10556853
+#
+# Any additional contributions are noted in the AUTHORS.md file.
+
+# This file is part of phnerg.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Wnck', '3.0')
+from gi.repository import Gtk, Gdk, GdkX11, Wnck
+from subprocess import PIPE, Popen
+
+##EDIT THESE
+width = 320
+height = 240
+zoom = 2
+fps = 25
+margin = 60
+vidcardnum = 0
+audcardnum = 0
+aspect = '4:3'
+viddevice = '/dev/video' + str(vidcardnum)
+chroma = 'YUY2'
+vidstandard = 'PAL'
+hwaccel = 'vaapi'
+## UP TO HERE
+
+class WindowError(Exception):
+    pass
+
+def getScreen():
+    Gtk.main_iteration()
+    screen = Wnck.Screen.get_default()
+    screen.force_update()
+    return screen
+
+def getGDKWindow(aWindow):
+    gdkdisplay = GdkX11.X11Display.get_default()
+    gdkwindow  = GdkX11.X11Window.foreign_new_for_display(gdkdisplay, aWindow.get_xid())
+    return gdkwindow
+
+def getWindow(aTitle):
+    screen = getScreen()
+    active = screen.get_active_window()
+    if active.get_name() == aTitle:
+        return active
+    for window in screen.get_windows():
+        if window.get_name() == aTitle:
+            return window
+    return None
+
+def adjust(aWindow):
+    aWindow.set_skip_pager(True)
+    aWindow.set_skip_tasklist(True)
+    aWindow.stick()
+    s = Gtk.Window().get_screen()
+    monitor = s.get_monitor_geometry(s.get_monitor_at_window(s.get_active_window()))
+    gdkwindow = getGDKWindow(aWindow)
+    gdkwindow.set_decorations(Gdk.WMDecoration.BORDER)
+    gdkscale = gdkwindow.get_scale_factor()
+    gdkwindow.move(
+        monitor.width - int(((width * zoom) + margin) / gdkscale),
+        monitor.height - int(((height * zoom) + margin) / gdkscale)
+    )
+
+def onWindowOpen(aScreen, aWindow, aData):
+    if aWindow.get_name() == aData:
+        adjust(aWindow)
+        Gtk.main_quit()
+
+def main(commandline=None):
+    if commandline is None:
+        commandline = [
+             #TODO: feature parity to vlc version by using ffmpeg only
+             #'ffmpeg',
+             #'-f', 'v4l2',
+             #'-video_size', str(width) + 'x' + str(height),
+             #'-framerate', str(fps),
+             #'-aspect', aspect,
+             #'-i', viddevice,
+             # ...
+            'vlc',
+            '-I',
+            'dummy',
+            '-v', '0',
+            '-q',
+            '--autoscale',
+            #'--width=' + str(width * zoom),
+            #'--height=' + str(height * zoom),
+            #'--canvas-width=' + str(width * zoom),
+            #'--canvas-height=' + str(height * zoom),
+            '--zoom=' + str(zoom),
+            '--quiet-synchro',
+            '--no-embedded-video',
+            '--video-title=camera mirror',
+            '--no-video-title-show',
+            '--disable-screensaver',
+            '--video-on-top',
+            ## These don't seem to work - am doing them in adjust() instead
+            #'--no-video-deco',
+            #'--video-x=' + str(gtk.gdk.screen_width - (width * zoom)),
+            #'--video-y=' + str(gtk.gdk.screen_height - (height * zoom)),
+            '--v4l2-dev=' + viddevice,
+            '--v4l2-chroma=' + chroma,
+            '--v4l2-standard=' + vidstandard,
+            '--v4l2-input=' + str(vidcardnum),
+            '--v4l2-audio-input=' + str(audcardnum),
+            '--v4l2-width=' + str(width),
+            '--v4l2-height=' + str(height),
+            '--v4l2-aspect-ratio=' + aspect,
+            '--v4l2-fps=' + str(fps),
+            '--avcodec-hw=' + hwaccel,
+            'v4l2://'
+        ]
+    timestamp = Gtk.get_current_event_time()
+    window = getWindow('camera mirror')
+    if not window:
+        sp = Popen(commandline, stdout=PIPE, stderr=PIPE)
+        getScreen().connect('window-opened', onWindowOpen, 'camera mirror')
+        Gtk.main()
+        return(sp.pid)
+
+if __name__ == "__main__":
+    print(main())

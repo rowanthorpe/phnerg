@@ -1,0 +1,58 @@
+#!/bin/sh
+
+# phnerg:
+#   Record desktop to matroska file with dirac and flac lossless codecs
+#
+# Copyright © 2017 Rowan Thorpe <rowan@rowanthorpe.com>
+#
+# Any additional contributions are noted in the AUTHORS.md file.
+
+# This file is part of phnerg.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+## EDIT THESE
+vidsize='3200x1800'
+audchan='2'
+withcamera='1'
+scaleflags='-filter:v scale=1360:-1'
+## UP TO HERE
+
+set -e
+
+scriptdir="$(dirname "$(readlink -e "${0}")")"
+
+while test ${#} -ne 0; do
+    case "${1}" in
+        dual) vidsize='5920x1800'; shift;;
+        mono) audchan='1'; shift;;
+        nocamera) withcamera=''; shift;;
+        noscale) scaleflags=''; shift;;
+    esac
+done
+
+screencast_command='ffmpeg \
+    -video_size ${vidsize} -framerate 25 -f x11grab -hwaccel vaapi -i :0.0 \
+    -f pulse -ar 48000 -ac ${audchan} -i default ${scaleflags} \
+    -c:a flac -c:v dirac -q:v 0 -strict -1 \
+    ~/Desktop/screencast-$(date +%Y%m%d%H%M%S).mkv
+'
+
+if test -z "${withcamera}"; then
+    eval "exec ${screencast_command}"
+else
+    pid=$("${scriptdir}/camera-mirror")
+    trap 'kill ${pid}' EXIT
+    eval "${screencast_command}"
+fi
