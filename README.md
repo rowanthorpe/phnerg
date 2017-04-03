@@ -39,9 +39,9 @@ License
 
 Copyright © 2017 Rowan Thorpe <rowan@rowanthorpe.com>
 
-`phnerg` uses the GPLv3 license, check the COPYING file.
+`phnerg` uses the GPLv3 license, check the `COPYING` file.
 
-Any additional contributions are noted in the AUTHORS.md file.
+Any additional contributions are noted in the `AUTHORS.md` file.
 
 Tips
 ----
