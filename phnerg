@@ -30,6 +30,7 @@ withcamera=1
 scaleflags='-filter:v scale=1360:-1'
 fps=25
 hwaccel='vaapi'
+dryrun=0
 ## UP TO HERE
 
 set -e
@@ -42,6 +43,7 @@ while test ${#} -ne 0; do
         mono) audchan=1; shift;;
         nocamera) withcamera=0; shift;;
         noscale) scaleflags=''; shift;;
+        dryrun) dryrun=1; shift;;
         *) printf 'Invalid arg "%s"\n' "${1}" >&2; exit 1;;
     esac
 done
@@ -54,9 +56,17 @@ screencast_command='ffmpeg \
 '
 
 if test ${withcamera} -eq 0; then
-    eval "exec ${screencast_command}"
+    if test ${dryrun} -eq 1; then
+        printf 'eval "exec %s"\n' "${screencast_command}"
+    else
+        eval "exec ${screencast_command}"
+    fi
 else
-    pid=$("${scriptdir}/camera-mirror")
-    trap 'kill ${pid}' EXIT
-    eval "${screencast_command}"
+    if test ${dryrun} -eq 1; then
+        printf 'pid=$("%s/camera-mirror")\ntrap '\''kill ${pid}'\'' EXIT\neval "%s"\n' "${scriptdir}" "${screencast_command}"
+    else
+        pid=$("${scriptdir}/camera-mirror")
+        trap 'kill ${pid}' EXIT
+        eval "${screencast_command}"
+    fi
 fi
